@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0809">
+<title>For Sasha</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Homemade+Apple&display=swap" rel="stylesheet">
+<style>
+/* ===== COLORS & FONTS: change them here ===== */
+:root{
+  --black:#0a0809; --ivory:#f6efe2; --gold:#d9bd86; --pink:#d4a5a5; --ink:#3b2f2a;
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --hand:'Homemade Apple','Segoe Script','Bradley Hand',cursive;
+}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--black);color:var(--ivory);font-family:var(--serif);font-size:19px;line-height:1.6;overflow:hidden}
+canvas#sky{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+body::after{content:"";position:fixed;inset:0;z-index:9;pointer-events:none;opacity:.07;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+ animation:grain 1s steps(4) infinite}
+@keyframes grain{50%{transform:translate(-2%,2%)}}
+body::before{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 50% 30%,rgba(217,189,134,.1),transparent 60%),radial-gradient(ellipse at 50% 120%,rgba(0,0,0,.8),transparent 70%)}
+
+.scene{position:fixed;inset:0;z-index:2;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;align-items:center;
+ padding:calc(64px + env(safe-area-inset-top)) 24px calc(48px + env(safe-area-inset-bottom));
+ opacity:0;visibility:hidden;transition:opacity 1.2s ease,visibility 1.2s}
+.scene.on{opacity:1;visibility:visible}
+.scene>*{max-width:520px;width:100%}
+.mid{justify-content:center}
+h1,h2{font-weight:300;letter-spacing:.02em;line-height:1.15}
+h2{font-size:2rem;text-align:center;margin-bottom:.4em}
+.hand{font-family:var(--hand);color:var(--pink);font-size:.8rem;line-height:2}
+.center{text-align:center}
+.dim{opacity:.7}
+
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+.btn{display:block;margin:2rem auto 0;padding:.9em 2.2em;border:1px solid var(--gold);border-radius:99px;color:var(--gold);
+ letter-spacing:.08em;background:rgba(217,189,134,.06);box-shadow:0 0 30px rgba(217,189,134,.15);transition:.4s;width:auto}
+.btn:active{background:var(--gold);color:var(--black);transform:scale(.97)}
+.btn.small{margin-top:1.4rem;font-size:.9rem;padding:.6em 1.6em}
+
+/* top controls */
+#bar{position:fixed;z-index:10;top:calc(10px + env(safe-area-inset-top));left:0;right:0;display:flex;justify-content:space-between;padding:0 14px;opacity:0;transition:opacity 1s;pointer-events:none}
+#bar.on{opacity:1}
+#bar button{pointer-events:auto;font-size:.85rem;color:var(--gold);padding:.45em 1em;border:1px solid rgba(217,189,134,.35);border-radius:99px;background:rgba(10,8,9,.6)}
+
+/* 1 opening */
+#name{font-size:clamp(3.4rem,18vw,6rem);text-align:center;font-weight:300;font-style:italic;color:var(--ivory);text-shadow:0 0 40px rgba(217,189,134,.5)}
+#name span{display:inline-block;opacity:0;filter:blur(12px);transform:translateY(14px);animation:ltr 2.2s ease forwards}
+@keyframes ltr{to{opacity:1;filter:none;transform:none}}
+.line{width:0;height:1px;background:var(--gold);margin:1.4rem auto;animation:ln 2s 1.8s ease forwards}
+@keyframes ln{to{width:90px}}
+.fade{opacity:0;animation:fi 2s ease forwards}
+@keyframes fi{to{opacity:1}}
+
+/* 2 message */
+.msg p{margin-bottom:1.3em;opacity:0;transform:translateY(10px);transition:1.6s ease}
+.msg p.show{opacity:1;transform:none}
+.msg p:first-child::first-letter{font-size:3.2em;float:left;line-height:.8;padding:.08em .1em 0 0;color:var(--gold);font-style:italic}
+
+/* 3 diary */
+.book{position:relative;width:min(78vw,340px);height:min(104vw,450px);margin:1rem auto 0;perspective:1400px}
+.pg{position:absolute;inset:0;transform-origin:left center;transition:transform 1.1s cubic-bezier(.5,.1,.2,1),opacity .4s .7s;backface-visibility:hidden;
+ background:var(--ivory);color:var(--ink);border-radius:3px 10px 10px 3px;padding:30px 26px 26px 34px;display:flex;flex-direction:column;justify-content:center;
+ box-shadow:0 20px 50px rgba(0,0,0,.6),inset 8px 0 14px -8px rgba(60,40,20,.35);
+ background-image:repeating-linear-gradient(transparent 0 31px,rgba(150,120,90,.18) 31px 32px)}
+.pg.flip{transform:rotateY(-125deg);opacity:0;pointer-events:none}
+.pg.cover{background:#1b1214 none;color:var(--gold);align-items:center;text-align:center;border:1px solid var(--gold);box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 40px rgba(217,189,134,.15),inset 0 0 0 7px #1b1214,inset 0 0 0 8px rgba(217,189,134,.5)}
+.pg.cover b{font-size:2rem;font-weight:300;font-style:italic;display:block}
+.pg p{font-size:1.05rem;line-height:32px}
+.pg .hand{color:#a5686a;font-size:.72rem;line-height:2.2;margin-top:12px;transform:rotate(-2deg)}
+.pg .pg-n{position:absolute;bottom:8px;right:16px;font-size:.8rem;opacity:.5}
+.tape{position:absolute;top:-10px;left:42%;width:70px;height:22px;background:rgba(212,165,165,.55);transform:rotate(-4deg)}
+.pg .star{position:absolute;top:14px;right:18px;color:var(--gold);font-size:1.2rem}
+#dnav{display:flex;justify-content:center;gap:12px;margin-top:1.6rem}
+
+/* 4 cards */
+.card{border:1px solid rgba(217,189,134,.25);border-radius:6px 22px 6px 22px;padding:1.6rem 1.4rem;margin:0 0 1.2rem;background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.01));
+ opacity:0;transform:translateY(24px) rotate(var(--r,0deg));transition:1.2s cubic-bezier(.2,.7,.2,1);box-shadow:0 10px 40px rgba(0,0,0,.4)}
+.card.show{opacity:1;transform:rotate(var(--r,0deg))}
+.card:nth-child(odd){--r:-.8deg}.card:nth-child(even){--r:.8deg;margin-left:14px}
+.card h3{font-weight:400;font-size:1.45rem;font-style:italic;color:var(--gold);margin-bottom:.3rem}
+.card .hand{display:block;margin-top:.6rem;font-size:.7rem}
+
+/* 5 games */
+#tabs{display:flex;justify-content:center;gap:10px;margin:.6rem 0 1.2rem}
+#tabs button{width:44px;height:44px;border-radius:50%;border:1px solid rgba(217,189,134,.35);color:var(--gold);font-size:1.05rem}
+#tabs button[aria-selected=true]{background:var(--gold);color:var(--black)}
+.g{display:none}.g.on{display:block;animation:fi 1s forwards;opacity:0}
+.g h3{text-align:center;font-weight:400;font-style:italic;font-size:1.4rem}
+.g .sub{text-align:center;opacity:.7;font-size:.95rem;margin-bottom:.8rem}
+.area{position:relative;height:300px;border:1px solid rgba(217,189,134,.25);border-radius:16px;overflow:hidden;background:rgba(0,0,0,.35);touch-action:manipulation}
+.res{text-align:center;min-height:3.2em;margin-top:1rem;font-style:italic;color:var(--gold)}
+.wish{position:absolute;color:var(--gold);font-size:1.6rem;text-shadow:0 0 14px var(--gold);animation:up 3.2s ease-out forwards;pointer-events:none}
+@keyframes up{to{transform:translateY(-220px) scale(.4);opacity:0}}
+.jar{position:absolute;left:50%;bottom:14px;width:150px;height:200px;margin-left:-75px;border:2px solid rgba(246,239,226,.5);border-top:0;border-radius:6px 6px 40px 40px;background:rgba(255,255,255,.04)}
+.jar::before{content:"";position:absolute;top:-8px;left:-8px;right:-8px;height:8px;border:2px solid rgba(246,239,226,.5);border-radius:4px}
+.orb{position:absolute;width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,var(--gold) 60%);box-shadow:0 0 16px var(--gold);animation:drop .9s cubic-bezier(.5,0,.8,.6) backwards}
+@keyframes drop{from{transform:translateY(-260px);opacity:0}}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px;height:100%}
+.mc{perspective:600px}.mc button{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .6s}
+.mc.up button{transform:rotateY(180deg)}
+.mc span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;border-radius:10px;backface-visibility:hidden;border:1px solid rgba(217,189,134,.4)}
+.mc .f{color:var(--gold);font-size:1.4rem;background:rgba(217,189,134,.06)}
+.mc .b{transform:rotateY(180deg);background:var(--pink);color:var(--black);font-style:italic;font-size:1.05rem}
+.mc.done .b{background:var(--gold)}
+.env{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px;height:100%}
+.env button{border:1px solid rgba(217,189,134,.4);border-radius:8px;font-size:1.8rem;background:rgba(212,165,165,.1);transition:.5s;padding:8px;line-height:1.3}
+.env button.open{background:var(--ivory);color:var(--ink);font-size:.82rem;font-style:italic;animation:fi .8s forwards}
+svg#con{width:100%;height:100%}
+svg#con circle{fill:var(--ivory);cursor:pointer}
+svg#con .nxt{animation:pulse 1.4s infinite}
+@keyframes pulse{50%{r:11;opacity:.5}}
+svg#con line{stroke:var(--gold);stroke-width:1.5;stroke-dasharray:300;stroke-dashoffset:300;animation:dr 1s forwards}
+@keyframes dr{to{stroke-dashoffset:0}}
+
+/* 6 final */
+.paper{position:relative;background:var(--ivory);color:var(--ink);padding:2.2rem 1.7rem 2rem;border-radius:4px;box-shadow:0 0 90px rgba(217,189,134,.35),0 30px 60px rgba(0,0,0,.6);margin-top:.5rem}
+.paper::before{content:"";position:absolute;inset:8px;border:1px solid rgba(180,145,90,.5);pointer-events:none}
+.paper p{margin-bottom:1em;opacity:0;transition:1.8s}
+.paper p.show{opacity:1}
+.paper .sig{font-family:var(--hand);color:#a5686a;font-size:.85rem;margin-top:1.4rem}
+.paper h2{color:var(--ink);font-style:italic}
+
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
+</style>
+</head>
+<body>
+<canvas id="sky"></canvas>
+
+<div id="bar"><button id="snd" aria-pressed="false">Sound: off</button><button id="rst">Start over</button></div>
+
+<!-- ============ 1. OPENING ============ -->
+<section class="scene mid on" id="s0">
+  <p class="center dim fade" style="animation-delay:.6s;font-style:italic">for</p>
+  <h1 id="name" aria-label="Sasha"></h1>
+  <div class="line"></div>
+  <p class="center fade" style="animation-delay:3s">someone I'm genuinely grateful<br>to have in my life.</p>
+  <button class="btn fade" id="open" style="animation-delay:4.4s">Open Your Little Surprise</button>
+</section>
+
+<!-- ============ 2. MESSAGE ============ -->
+<section class="scene mid" id="s1">
+  <div class="msg">
+    <p>Hi Sasha.</p>
+    <p>I wanted to make you something, because I don't think I say this enough: thank you for being my friend.</p>
+    <p>Thank you for being someone I can talk to, for the conversations that make an ordinary day better, and for the kindness you bring without even trying.</p>
+    <p>A good friend is a rare thing, and I'm really glad you're mine. Every memory we share, and every one still to come, matters to me.</p>
+    <p class="hand">so, I made you a little something &rarr;</p>
+  </div>
+  <button class="btn small" data-go="2">Open the diary</button>
+</section>
+
+<!-- ============ 3. DIARY ============ -->
+<section class="scene" id="s2">
+  <h2>The Friendship Diary</h2>
+  <p class="center dim" id="dhint" style="font-size:.95rem">Tap the cover to open it</p>
+  <div class="book" id="book">
+    <!-- EDIT THESE PAGES: each .pg is one page -->
+    <div class="pg" id="pg5"><div class="star">&#10022;</div><p>Page last.</p><p>Some people just make life feel lighter.</p><div class="hand">you do that. thank you.</div><span class="pg-n">5</span></div>
+    <div class="pg" id="pg4"><p>A small note for the days when you forget.</p><p>You matter. To me, you really do.</p><div class="hand">(read this on a bad day too)</div><span class="pg-n">4</span></div>
+    <div class="pg" id="pg3"><div class="tape"></div><p>I'm grateful for the talking, the laughing, and the quiet moments in between.</p><div class="hand">best part of any day</div><span class="pg-n">3</span></div>
+    <div class="pg" id="pg2"><p>Friendship isn't loud. It's the little things, showing up, listening, being kind.</p><div class="hand">you're good at all of it</div><span class="pg-n">2</span></div>
+    <div class="pg" id="pg1"><div class="star">&#10022;</div><p>Dear Sasha,</p><p>This page is just to say thank you. Really.</p><div class="hand">turn the page &rarr;</div><span class="pg-n">1</span></div>
+    <div class="pg cover" id="cover" role="button" tabindex="0" aria-label="Open the diary"><div><b>Sasha</b><span style="letter-spacing:.3em;font-size:.8rem">A DIARY OF THANKS</span><div style="font-size:1.6rem;margin-top:1.4rem">&#10022;</div></div></div>
+  </div>
+  <div id="dnav" hidden><button class="btn small" id="prev" style="margin:0">Back</button><button class="btn small" id="next" style="margin:0">Turn page</button></div>
+  <button class="btn small" id="dnext" data-go="3" hidden>Continue</button>
+</section>
+
+<!-- ============ 4. CARDS ============ -->
+<section class="scene" id="s3">
+  <h2>Things I Appreciate</h2>
+  <p class="center dim" style="margin-bottom:1.6rem;font-size:.95rem">a few of the reasons I'm thankful</p>
+  <div>
+    <div class="card"><h3>Your presence</h3>Just knowing you're around makes things feel a little better.<span class="hand">it counts, a lot</span></div>
+    <div class="card"><h3>Our conversations</h3>Talking with you is something I always value, easy, honest and genuine.<span class="hand">never boring</span></div>
+    <div class="card"><h3>Your kindness</h3>The way you treat people says a lot about who you are, and I notice it.<span class="hand">it doesn't go unnoticed</span></div>
+    <div class="card"><h3>Having a friend</h3>The happiness of simply having someone like you in my corner.<span class="hand">I'm lucky</span></div>
+    <div class="card"><h3>What's still ahead</h3>All the memories we haven't made yet. I'm looking forward to them.<span class="hand">to be continued...</span></div>
+  </div>
+  <button class="btn small" data-go="4">A little surprise</button>
+</section>
+
+<!-- ============ 5. GAMES ============ -->
+<section class="scene" id="s4">
+  <h2>A Little Surprise</h2>
+  <div id="tabs" role="tablist"></div>
+  <div class="g" id="g0"><h3>Make a wish</h3><p class="sub">Tap the sky five times</p><div class="area" id="sky1"></div><div class="res" id="r0"></div></div>
+  <div class="g" id="g1"><h3>The thank-you jar</h3><p class="sub">Add a light for every thank-you</p><div class="area" id="jarA"><div class="jar" id="jar"></div></div><button class="btn small" id="addOrb">Add a light</button><div class="res" id="r1"></div></div>
+  <div class="g" id="g2"><h3>Matching hearts</h3><p class="sub">Find the three pairs</p><div class="area"><div class="grid" id="mem"></div></div><div class="res" id="r2"></div></div>
+  <div class="g" id="g3"><h3>Little notes</h3><p class="sub">Open each envelope</p><div class="area"><div class="env" id="env"></div></div><div class="res" id="r3"></div></div>
+  <div class="g" id="g4"><h3>Our constellation</h3><p class="sub">Tap the glowing star, in order</p><div class="area"><svg id="con" viewBox="0 0 300 300"></svg></div><div class="res" id="r4"></div></div>
+  <button class="btn small" data-go="5">The final letter</button>
+</section>
+
+<!-- ============ 6. FINAL LETTER ============ -->
+<section class="scene" id="s5">
+  <div class="paper" id="paper">
+    <h2>Dear Sasha,</h2>
+    <p>Thank you for being my friend, Sasha.</p>
+    <p>You might not always realize it, but having you in my life is something I genuinely appreciate.</p>
+    <p>I'm glad our paths crossed, and I hope we create many more beautiful memories together.</p>
+    <p class="sig">with gratitude,<br>your friend</p>
+  </div>
+  <button class="btn small" id="again">Experience it again</button>
+</section>
+
+<script>
+/* ============ BASIC HELPERS ============ */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+let soundOn=false, ac;
+
+/* ============ SOUND (only when she turns it on) ============ */
+function chime(f=660,d=1.4,v=.08){
+  if(!soundOn)return;
+  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();
+    const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=f;
+    g.gain.setValueAtTime(v,ac.currentTime);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+d);
+    o.connect(g).connect(ac.destination);o.start();o.stop(ac.currentTime+d);}catch(e){}
+}
+$('#snd').onclick=e=>{soundOn=!soundOn;e.target.textContent='Sound: '+(soundOn?'on':'off');e.target.setAttribute('aria-pressed',soundOn);chime(880)};
+
+/* ============ SCENES ============ */
+let cur=0;
+function go(n){
+  $$('.scene').forEach((s,i)=>s.classList.toggle('on',i===n));
+  $('#s'+n).scrollTop=0; cur=n; chime(523);
+  $('#bar').classList.toggle('on',n>0);
+  if(n===1)reveal('#s1 .msg p',1100);
+  if(n===3)observeCards();
+  if(n===4)openTab(0);
+  if(n===5)reveal('#paper p',1800);
+}
+$$('[data-go]').forEach(b=>b.onclick=()=>go(+b.dataset.go));
+$('#open').onclick=()=>go(1);
+function reveal(sel,gap){$$(sel).forEach((p,i)=>{p.classList.remove('show');setTimeout(()=>p.classList.add('show'),700+i*gap)})}
+
+/* Opening: name appears letter by letter */
+'Sasha'.split('').forEach((c,i)=>{const s=document.createElement('span');s.textContent=c;s.style.animationDelay=(.8+i*.35)+'s';$('#name').appendChild(s)});
+
+/* Restart */
+function restart(){
+  $$('.card').forEach(c=>c.classList.remove('show'));
+  resetDiary();$$('.msg p,.paper p').forEach(p=>p.classList.remove('show'));
+  buildGames();
+  const s=$('#s0');s.querySelectorAll('.fade,.line,#name span').forEach(el=>{el.style.animation='none';el.offsetHeight;el.style.animation=''});
+  go(0);
+}
+$('#rst').onclick=restart;$('#again').onclick=restart;
+
+/* ============ DIARY ============ */
+const pages=['cover','pg1','pg2','pg3','pg4','pg5'].map(id=>document.getElementById(id));
+let pi=0;
+function showPage(){
+  pages.forEach((p,i)=>p.classList.toggle('flip',i<pi));
+  $('#dnav').hidden=pi===0;
+  $('#dhint').style.opacity=pi===0?1:0;
+  $('#prev').disabled=pi===0;
+  $('#next').style.display=pi>=pages.length-1?'none':'';
+  $('#dnext').hidden=pi<pages.length-1;
+  chime(400+pi*60,.8,.05);
+}
+function resetDiary(){pi=0;showPage()}
+$('#cover').onclick=()=>{pi=1;showPage()};
+$('#cover').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){pi=1;showPage()}};
+$('#next').onclick=()=>{if(pi<pages.length-1){pi++;showPage()}};
+$('#prev').onclick=()=>{if(pi>0){pi--;showPage()}};
+$('#book').onclick=e=>{ if(e.target.closest('.pg.cover'))return; if(pi>0&&pi<pages.length-1&&!e.target.closest('button')){pi++;showPage()} };
+
+/* ============ CARDS ============ */
+function observeCards(){
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('show');chime(700,1,.04);io.unobserve(e.target)}}),{root:$('#s3'),threshold:.3});
+  $$('.card').forEach(c=>io.observe(c));
+}
+
+/* ============ GAMES ============ */
+const tabs=$('#tabs');
+['✦','✧','♡','✉','★'].forEach((t,i)=>{const b=document.createElement('button');b.textContent=t;b.setAttribute('role','tab');b.setAttribute('aria-label','Game '+(i+1));b.onclick=()=>openTab(i);tabs.appendChild(b)});
+function openTab(i){
+  $$('.g').forEach((g,k)=>g.classList.toggle('on',k===i));
+  $$('#tabs button').forEach((b,k)=>b.setAttribute('aria-selected',k===i));
+}
+function buildGames(){
+  // 1 wishes
+  let w=0;$('#r0').textContent='';$('#sky1').innerHTML='';
+  $('#sky1').onclick=e=>{
+    if(w>=5)return;w++;const r=e.currentTarget.getBoundingClientRect();
+    const s=document.createElement('div');s.className='wish';s.textContent='✦';
+    s.style.left=(e.clientX-r.left-10)+'px';s.style.top=(e.clientY-r.top-10)+'px';e.currentTarget.appendChild(s);chime(500+w*110,1.6);
+    if(w===5)$('#r0').textContent='Five wishes sent. I hope they all find their way to you.';
+  };
+  // 2 jar
+  const msgs=['kindness','laughter','good talks','your time','trust','thank you'];let o=0;
+  $('#jar').innerHTML='';$('#r1').textContent='';$('#addOrb').disabled=false;
+  $('#addOrb').onclick=()=>{
+    if(o>=6)return;const d=document.createElement('div');d.className='orb';
+    d.style.left=(8+(o%4)*34+(o>3?17:0))+'px';d.style.bottom=(6+Math.floor(o/4)*30)+'px';$('#jar').appendChild(d);
+    $('#r1').textContent='For your '+msgs[o];o++;chime(600+o*70,1.2);
+    if(o===6){$('#r1').textContent='The jar is full. Thank you, Sasha.';$('#addOrb').disabled=true}
+  };
+  // 3 memory
+  const words=['Laughter','Kindness','Trust'],deck=[...words,...words].sort(()=>Math.random()-.5);let open=[],found=0;
+  $('#mem').innerHTML='';$('#r2').textContent='';
+  deck.forEach(wd=>{
+    const c=document.createElement('div');c.className='mc';c.innerHTML='<button aria-label="Card"><span class="f">♡</span><span class="b">'+wd+'</span></button>';
+    c.firstChild.onclick=()=>{
+      if(c.classList.contains('up')||open.length>1)return;c.classList.add('up');open.push(c);chime(620);
+      if(open.length===2){
+        const [a,b]=open;
+        if(a.textContent===b.textContent){a.classList.add('done');b.classList.add('done');open=[];chime(880);if(++found===3)$('#r2').textContent='Laughter, kindness and trust. My favourite things in a friend.'}
+        else setTimeout(()=>{a.classList.remove('up');b.classList.remove('up');open=[]},900);
+      }
+    };$('#mem').appendChild(c);
+  });
+  // 4 envelopes
+  const notes=['I\'m glad you\'re here.','Thank you for being you.','You make days better.','Here\'s to more memories.'];let eo=0;
+  $('#env').innerHTML='';$('#r3').textContent='';
+  notes.forEach(n=>{const b=document.createElement('button');b.textContent='✉';b.setAttribute('aria-label','Envelope');
+    b.onclick=()=>{if(b.classList.contains('open'))return;b.classList.add('open');b.textContent=n;chime(740);if(++eo===4)$('#r3').textContent='Four little notes, one big thank you.'};$('#env').appendChild(b)});
+  // 5 constellation
+  const pts=[[150,40],[220,100],[200,200],[130,250],[70,190],[90,100]];let ci=0;
+  const svg=$('#con');svg.innerHTML='';$('#r4').textContent='';
+  pts.forEach((p,i)=>{const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',p[0]);c.setAttribute('cy',p[1]);c.setAttribute('r',8);
+    if(i===0)c.classList.add('nxt');
+    c.onclick=()=>{
+      if(i!==ci)return;chime(500+i*90);c.classList.remove('nxt');c.style.filter='drop-shadow(0 0 8px #d9bd86)';
+      if(i>0){const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',pts[i-1][0]);l.setAttribute('y1',pts[i-1][1]);l.setAttribute('x2',p[0]);l.setAttribute('y2',p[1]);svg.insertBefore(l,svg.firstChild)}
+      ci++;if(ci<6)svg.children[svg.children.length-6+ci]?.classList.add('nxt');
+      else{const l=document.createElementNS('http://www.w3.org/2000/svg','line');l.setAttribute('x1',pts[5][0]);l.setAttribute('y1',pts[5][1]);l.setAttribute('x2',pts[0][0]);l.setAttribute('y2',pts[0][1]);svg.insertBefore(l,svg.firstChild);$('#r4').textContent='A constellation is just stars that stay close. Thanks for staying close.'}
+    };svg.appendChild(c)});
+}
+buildGames();showPage();
+
+/* ============ STARS & PARTICLES ============ */
+const cv=$('#sky'),cx=cv.getContext('2d');let W,H,ps=[];
+function size(){W=cv.width=innerWidth*devicePixelRatio;H=cv.height=innerHeight*devicePixelRatio}
+addEventListener('resize',size);size();
+for(let i=0;i<90;i++)ps.push({x:Math.random(),y:Math.random(),r:Math.random()*1.6+.4,v:Math.random()*.00006+.00001,t:Math.random()*6,g:Math.random()<.35});
+(function loop(){
+  cx.clearRect(0,0,W,H);
+  ps.forEach(p=>{
+    p.y-=p.v;p.t+=.02;if(p.y<-.02){p.y=1.02;p.x=Math.random()}
+    const a=.35+.45*Math.sin(p.t);
+    cx.beginPath();cx.fillStyle=p.g?`rgba(217,189,134,${a})`:`rgba(246,239,226,${a*.8})`;
+    cx.shadowBlur=p.g?10:4;cx.shadowColor=p.g?'#d9bd86':'#f6efe2';
+    cx.arc(p.x*W,p.y*H,p.r*devicePixelRatio,0,7);cx.fill();
+  });
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
